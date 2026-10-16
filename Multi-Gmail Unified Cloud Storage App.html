@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Gmail Unified Cloud Storage System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts for Khmer Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,300..700;1,300..700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Kantumruy Pro', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        },
+                        dark: {
+                            bg: '#0b0f17',
+                            card: '#131b2e',
+                            border: '#1f293d',
+                            hover: '#1a243b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0b0f17;
+            color: #f3f4f6;
+            font-family: 'Plus Jakarta Sans', 'Kantumruy Pro', sans-serif;
+        }
+
+        .glass-panel {
+            background: rgba(19, 27, 46, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f17;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-gray-800 glass-panel sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-brand-500/10 border border-brand-500/30 rounded-xl text-brand-500">
+                    <i data-lucide="hard-drive" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
+                        CloudHub Multi-Gmail Storage
+                        <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30">PROTOTYPE</span>
+                    </h1>
+                    <p class="text-xs text-gray-400">ប្រព័ន្ធគ្រប់គ្រងការផ្ទុកទិន្នន័យរួមគ្នាច្រើន Gmail (Unified Cloud Management)</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="openLinkModal()" class="px-3.5 py-2 bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs sm:text-sm rounded-xl transition flex items-center gap-2 shadow-lg shadow-brand-500/20">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    <span>ភ្ជាប់ Gmail ថ្មី</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+        <!-- Top Combined Storage Overview Bar -->
+        <div class="glass-panel p-5 rounded-2xl border border-gray-800 relative overflow-hidden">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+                <div>
+                    <span class="text-xs text-brand-400 font-semibold tracking-wider uppercase">សេចក្តីសង្ខេបទំហំផ្ទុកសរុប (Consolidated Storage)</span>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span id="total-used-gb">0.0</span> GB នៃ <span id="total-max-gb">0.0</span> GB បានប្រើប្រាស់
+                    </h2>
+                </div>
+                <div class="flex items-center gap-4 text-xs">
+                    <div class="flex items-center gap-2 bg-gray-900/80 px-3 py-1.5 rounded-lg border border-gray-800">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        <span class="text-gray-300">គណនីសកម្ម: <strong id="active-acc-count" class="text-white">0</strong></span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-gray-900/80 px-3 py-1.5 rounded-lg border border-gray-800">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                        <span class="text-gray-300">ចំនួន File សរុប: <strong id="total-file-count" class="text-white">0</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Progress Bar -->
+            <div class="w-full bg-gray-950 rounded-full h-3 overflow-hidden border border-gray-800 p-0.5">
+                <div id="global-progress-bar" class="bg-gradient-to-r from-emerald-500 via-teal-400 to-blue-500 h-full rounded-full transition-all duration-500" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- Main Workspace Grid (3 Columns on Desktop) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- LEFT COLUMN: Connected Gmail Accounts & Storage Status -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-sm text-gray-200 flex items-center gap-2">
+                        <i data-lucide="mail" class="w-4 h-4 text-brand-500"></i>
+                        <span>គណនី Gmail ដែលបានភ្ជាប់ (<span id="acc-list-count">0</span>)</span>
+                    </h3>
+                    <span class="text-[11px] text-gray-400">15GB Free/Acc</span>
+                </div>
+
+                <!-- Account Cards Container -->
+                <div id="accounts-container" class="space-y-3">
+                    <!-- Dynamic Accounts inject here -->
+                </div>
+            </div>
+
+            <!-- CENTER & RIGHT COLUMN: Upload Zone & Unified File Manager -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- Upload Simulator Zone -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-800 border-dashed border-2 border-gray-700/60 hover:border-brand-500/50 transition-all text-center relative group">
+                    <input type="file" id="file-input" onchange="handleFileSelect(event)" class="hidden" accept="video/*,image/*,application/pdf">
+                    
+                    <div class="flex flex-col items-center justify-center space-y-3">
+                        <div class="p-3 bg-brand-500/10 border border-brand-500/30 rounded-full text-brand-500 group-hover:scale-110 transition-transform">
+                            <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-white">សាកល្បង Upload ឯកសារថ្មី (File Upload Simulator)</h4>
+                            <p class="text-xs text-gray-400 mt-1">ប្រព័ន្ធនឹងស្កែនមើល Quota ស្វ័យប្រវត្តិ។ បើ Gmail ទី១ ពេញ វានឹងរំលងទៅ Gmail ទី២ ដោយស្វ័យប្រវត្តិ។</p>
+                        </div>
+
+                        <div class="flex flex-wrap justify-center gap-2 pt-2">
+                            <button onclick="document.getElementById('file-input').click()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold rounded-xl border border-gray-700 transition">
+                                ជ្រើសរើស File ពីកុំព្យូទ័រ
+                            </button>
+                            <button onclick="simulateQuickUpload(2.5, 'Movie_Clip_1080p.mp4', 'video')" class="px-3 py-2 bg-brand-500/20 hover:bg-brand-500/30 text-brand-400 border border-brand-500/30 text-xs font-semibold rounded-xl transition">
+                                + ថែមវីដេអូ 2.5 GB
+                            </button>
+                            <button onclick="simulateQuickUpload(5.0, '4K_Project_Render.mp4', 'video')" class="px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 text-xs font-semibold rounded-xl transition">
+                                + ថែមវីដេអូ 5.0 GB
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unified File Manager Table -->
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-sm text-gray-200 flex items-center gap-2">
+                            <i data-lucide="files" class="w-4 h-4 text-brand-500"></i>
+                            <span>បញ្ជីឯកសាររួម (Unified File Index)</span>
+                        </h3>
+                        <span class="text-xs text-gray-400">ទាញយកពីគ្រប់ Gmail មកបង្ហាញរួមគ្នា</span>
+                    </div>
+
+                    <!-- File Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-gray-300">
+                            <thead class="bg-gray-950/80 text-gray-400 uppercase tracking-wider text-[10px] border-b border-gray-800">
+                                <tr>
+                                    <th class="p-3">ឈ្មោះឯកសារ</th>
+                                    <th class="p-3">ប្រភេទ</th>
+                                    <th class="p-3">ទំហំ</th>
+                                    <th class="p-3">រក្សាទុកនៅ (Stored In)</th>
+                                    <th class="p-3 text-right">សកម្មភាព</th>
+                                </tr>
+                            </thead>
+                            <tbody id="files-tbody" class="divide-y divide-gray-800/60">
+                                <!-- Dynamic File rows inject here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Live System Activity Log -->
+                <div class="glass-panel p-4 rounded-2xl border border-gray-800">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-bold text-xs text-gray-300 flex items-center gap-2">
+                            <i data-lucide="terminal" class="w-3.5 h-3.5 text-brand-500"></i>
+                            <span>កំណត់ហេតុប្រព័ន្ធ (Live Overflow & Smart Routing Log)</span>
+                        </h4>
+                        <button onclick="clearLogs()" class="text-[10px] text-gray-500 hover:text-gray-300">Clear Log</button>
+                    </div>
+                    <div id="system-logs" class="bg-gray-950 p-3 rounded-xl border border-gray-900 font-mono text-[11px] h-28 overflow-y-auto space-y-1 text-gray-400">
+                        <p class="text-brand-400">[System] ប្រព័ន្ធគ្រប់គ្រង Multi-Gmail ត្រូវបានចាប់ផ្តើមដំណើរការ...</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Video Modal Viewer -->
+    <div id="video-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel bg-gray-900 border border-gray-800 rounded-2xl max-w-2xl w-full p-5 space-y-4 shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="film" class="w-5 h-5 text-brand-500"></i>
+                    <h3 id="modal-video-title" class="font-bold text-sm text-white">Video Player</h3>
+                </div>
+                <button onclick="closeVideoModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Video Player HTML5 -->
+            <div class="bg-black rounded-xl overflow-hidden aspect-video flex items-center justify-center">
+                <video id="modal-video-element" controls class="w-full h-full object-contain">
+                    <source src="" type="video/mp4">
+                    កម្មវិធីរុករករបស់អ្នកមិនគាំទ្រការចាក់វីដេអូឡើយ។
+                </video>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-gray-400 bg-gray-950 p-3 rounded-xl border border-gray-800">
+                <span>ប្រភពដើម: <strong id="modal-video-source" class="text-brand-400">Gmail Account</strong></span>
+                <span>ទំហំ: <strong id="modal-video-size" class="text-white">0 GB</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link New Account Modal -->
+    <div id="link-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-brand-500"></i>
+                    <span>ភ្ជាប់ គណនី Gmail ថ្មី (OAuth 2.0 Simulation)</span>
+                </h3>
+                <button onclick="closeLinkModal()" class="text-gray-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-300 mb-1">អាសយដ្ឋាន Gmail</label>
+                    <input type="email" id="new-gmail-email" placeholder="example.user@gmail.com" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-300 mb-1">ទំហំសរុប (Default 15GB)</label>
+                    <input type="number" id="new-gmail-max" value="15" readonly class="w-full bg-gray-950/60 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-400">
+                </div>
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2">
+                <button onclick="closeLinkModal()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-xl">បោះបង់</button>
+                <button onclick="confirmAddAccount()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold rounded-xl shadow-lg shadow-brand-500/20">ភ្ជាប់គណនី</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script Logic -->
+    <script>
+        // Default State Data
+        let accounts = [
+            { id: 1, email: 'rothy.storage01@gmail.com', usedGb: 14.2, maxGb: 15.0 },
+            { id: 2, email: 'rothy.backup02@gmail.com', usedGb: 2.1, maxGb: 15.0 },
+            { id: 3, email: 'rothy.media03@gmail.com', usedGb: 0.0, maxGb: 15.0 }
+        ];
+
+        let files = [
+            { id: 101, name: 'Khmer_Movie_Trailer_2026.mp4', sizeGb: 1.2, type: 'video', accountEmail: 'rothy.storage01@gmail.com', date: '2026-10-15', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' },
+            { id: 102, name: 'Vision_Quest_Episode1.mp4', sizeGb: 3.5, type: 'video', accountEmail: 'rothy.storage01@gmail.com', date: '2026-10-16', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
+            { id: 103, name: 'Project_Design_Docs.pdf', sizeGb: 0.4, type: 'document', accountEmail: 'rothy.backup02@gmail.com', date: '2026-10-16', url: '' }
+        ];
+
+        // Initialize App
+        window.onload = function() {
+            lucide.createIcons();
+            renderApp();
+        };
+
+        function renderApp() {
+            renderAccounts();
+            renderFiles();
+            updateGlobalStats();
+            lucide.createIcons();
+        }
+
+        // Render Accounts List
+        function renderAccounts() {
+            const container = document.getElementById('accounts-container');
+            document.getElementById('acc-list-count').innerText = accounts.length;
+            container.innerHTML = '';
+
+            accounts.forEach((acc, index) => {
+                const percent = Math.min(100, Math.round((acc.usedGb / acc.maxGb) * 100));
+                const isFull = acc.usedGb >= acc.maxGb;
+                const isNearlyFull = percent >= 85 && !isFull;
+
+                let statusBadge = isFull 
+                    ? `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-red-500/20 text-red-400 border border-red-500/30">ពេញ (FULL)</span>`
+                    : isNearlyFull 
+                        ? `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">ជិតពេញ</span>`
+                        : `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">សកម្ម</span>`;
+
+                let barColor = isFull ? 'bg-red-500' : isNearlyFull ? 'bg-amber-500' : 'bg-emerald-500';
+
+                const cardHtml = `
+                    <div class="glass-panel p-4 rounded-xl border border-gray-800 space-y-2 relative group hover:border-gray-700 transition">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <div class="p-1.5 bg-gray-800 rounded-lg shrink-0">
+                                    <i data-lucide="mail" class="w-4 h-4 text-brand-400"></i>
+                                </div>
+                                <span class="font-semibold text-xs text-white truncate">${acc.email}</span>
+                            </div>
+                            ${statusBadge}
+                        </div>
+
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px] text-gray-400">
+                                <span>ទំហំប្រើប្រាស់:</span>
+                                <span class="font-mono text-gray-200">${acc.usedGb.toFixed(1)} GB / ${acc.maxGb.toFixed(1)} GB (${percent}%)</span>
+                            </div>
+                            <div class="w-full bg-gray-950 rounded-full h-2 overflow-hidden border border-gray-900">
+                                <div class="${barColor} h-full rounded-full transition-all duration-500" style="width: ${percent}%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-1 text-[10px] text-gray-500">
+                            <span>#${index + 1} Storage Node</span>
+                            <button onclick="removeAccount(${acc.id})" class="text-red-400/60 hover:text-red-400 transition">លុបភ្ជាប់</button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+        }
+
+        // Render Files Table
+        function renderFiles() {
+            const tbody = document.getElementById('files-tbody');
+            tbody.innerHTML = '';
+
+            files.forEach(file => {
+                const isVideo = file.type === 'video';
+                const fileIcon = isVideo ? 'file-video' : 'file-text';
+                const iconColor = isVideo ? 'text-blue-400' : 'text-emerald-400';
+
+                const row = `
+                    <tr class="hover:bg-gray-900/50 transition border-b border-gray-800/40">
+                        <td class="p-3 font-medium text-white flex items-center gap-2.5">
+                            <i data-lucide="${fileIcon}" class="w-4 h-4 ${iconColor} shrink-0"></i>
+                            <span class="truncate max-w-[200px]">${file.name}</span>
+                        </td>
+                        <td class="p-3 capitalize text-gray-400">${file.type}</td>
+                        <td class="p-3 font-mono">${file.sizeGb.toFixed(1)} GB</td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded bg-gray-900 text-gray-300 border border-gray-800 font-mono text-[11px]">
+                                ${file.accountEmail}
+                            </span>
+                        </td>
+                        <td class="p-3 text-right">
+                            ${isVideo && file.url ? `
+                                <button onclick="playVideo('${file.name}', '${file.url}', '${file.accountEmail}', '${file.sizeGb}')" class="px-2.5 py-1 bg-brand-500/20 hover:bg-brand-500/30 text-brand-400 rounded-lg transition font-medium text-[11px] inline-flex items-center gap-1">
+                                    <i data-lucide="play" class="w-3 h-3"></i> មើលវីដេអូ
+                                </button>
+                            ` : '<span class="text-gray-600">N/A</span>'}
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            document.getElementById('total-file-count').innerText = files.length;
+        }
+
+        // Update Overall Stats
+        function updateGlobalStats() {
+            const totalUsed = accounts.reduce((acc, curr) => acc + curr.usedGb, 0);
+            const totalMax = accounts.reduce((acc, curr) => acc + curr.maxGb, 0);
+            const globalPercent = totalMax > 0 ? Math.min(100, Math.round((totalUsed / totalMax) * 100)) : 0;
+
+            document.getElementById('total-used-gb').innerText = totalUsed.toFixed(1);
+            document.getElementById('total-max-gb').innerText = totalMax.toFixed(1);
+            document.getElementById('active-acc-count').innerText = accounts.length;
+
+            const progressBar = document.getElementById('global-progress-bar');
+            progressBar.style.width = globalPercent + '%';
+        }
+
+        // Smart Overflow Upload Simulator
+        function simulateQuickUpload(sizeGb, filename, fileType) {
+            logMessage(`[Upload Request] កំពុងស្នើសុំ Upload ឯកសារ "${filename}" (${sizeGb} GB)...`);
+
+            // Find first account with available quota
+            let targetAcc = null;
+            for (let acc of accounts) {
+                if ((acc.usedGb + sizeGb) <= acc.maxGb) {
+                    targetAcc = acc;
+                    break;
+                } else {
+                    logMessage(`[Quota Overflow] គណនី ${acc.email} មិនមានទំហំគ្រប់គ្រាន់ឡើយ (ខ្វះ ${(sizeGb - (acc.maxGb - acc.usedGb)).toFixed(1)} GB)។ រំលងទៅគណនីបន្ទាប់...`);
+                }
+            }
+
+            if (!targetAcc) {
+                logMessage(`[Error] គ្រប់ Gmail ទាំងអស់ពេញអស់ហើយ! សូមភ្ជាប់ Gmail ថ្មីដើម្បីបន្ថែមទំហំផ្ទុក។`, 'text-red-400');
+                alert('គ្រប់ Gmail ទាំងអស់ពេញអស់ហើយ! សូមបន្ថែម Gmail ថ្មី។');
+                return;
+            }
+
+            // Perform Upload to target Account
+            targetAcc.usedGb += sizeGb;
+
+            const newFile = {
+                id: Date.now(),
+                name: filename,
+                sizeGb: sizeGb,
+                type: fileType,
+                accountEmail: targetAcc.email,
+                date: new Date().toISOString().split('T')[0],
+                url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
+            };
+
+            files.unshift(newFile);
+            logMessage(`[Success] បានរក្សាទុក "${filename}" ទៅក្នុង ${targetAcc.email} ដោយជោគជ័យ!`, 'text-emerald-400');
+
+            renderApp();
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Generate random size for simulation
+            const sizeGb = parseFloat((Math.random() * 2 + 0.5).toFixed(1));
+            simulateQuickUpload(sizeGb, file.name, file.type.includes('video') ? 'video' : 'document');
+        }
+
+        // Account Management
+        function openLinkModal() {
+            document.getElementById('link-modal').classList.remove('hidden');
+        }
+
+        function closeLinkModal() {
+            document.getElementById('link-modal').classList.add('hidden');
+        }
+
+        function confirmAddAccount() {
+            const emailInput = document.getElementById('new-gmail-email');
+            const email = emailInput.value.trim();
+
+            if (!email) {
+                alert('សូមបញ្ចូលអាសយដ្ឋាន Gmail');
+                return;
+            }
+
+            const newAcc = {
+                id: Date.now(),
+                email: email,
+                usedGb: 0.0,
+                maxGb: 15.0
+            };
+
+            accounts.push(newAcc);
+            logMessage(`[OAuth Connected] បានភ្ជាប់គណនី Gmail ថ្មី: ${email} (+15GB Quota)`);
+            emailInput.value = '';
+            closeLinkModal();
+            renderApp();
+        }
+
+        function removeAccount(id) {
+            accounts = accounts.filter(a => a.id !== id);
+            logMessage(`[Account Removed] បានផ្តាច់ទំនាក់ទំនងគណនី ID #${id}`);
+            renderApp();
+        }
+
+        // Video Player Modal
+        function playVideo(title, url, source, size) {
+            document.getElementById('modal-video-title').innerText = title;
+            document.getElementById('modal-video-source').innerText = source;
+            document.getElementById('modal-video-size').innerText = size + ' GB';
+
+            const videoElem = document.getElementById('modal-video-element');
+            videoElem.src = url;
+
+            document.getElementById('video-modal').classList.remove('hidden');
+            videoElem.play();
+        }
+
+        function closeVideoModal() {
+            const videoElem = document.getElementById('modal-video-element');
+            videoElem.pause();
+            document.getElementById('video-modal').classList.add('hidden');
+        }
+
+        // System Logs Helper
+        function logMessage(msg, colorClass = 'text-gray-400') {
+            const logsContainer = document.getElementById('system-logs');
+            const time = new Date().toLocaleTimeString('km-KH');
+            logsContainer.innerHTML += `<p class="${colorClass}">[${time}] ${msg}</p>`;
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('system-logs').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
