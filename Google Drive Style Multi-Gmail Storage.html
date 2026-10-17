@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="km" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Drive - Multi-Gmail Unified Storage</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts (Google Sans style / Inter / Kantumruy Pro for Khmer) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Kantumruy Pro', 'sans-serif'],
+                    },
+                    colors: {
+                        drive: {
+                            blue: '#1a73e8',
+                            hoverBlue: '#1557b0',
+                            bgDark: '#131314',
+                            surfaceDark: '#1e1f20',
+                            cardDark: '#28292a',
+                            borderDark: '#36373a',
+                            lightBg: '#f8faed',
+                            lightCard: '#ffffff'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', 'Kantumruy Pro', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a4d51;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #606469;
+        }
+
+        /* Smooth Drawer Transition */
+        .drawer-slide {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-[#131314] text-slate-200 min-h-screen flex flex-col selection:bg-blue-600 selection:text-white antialiased">
+
+    <!-- ==================== TOP NAVBAR (DESKTOP & MOBILE HEADER) ==================== -->
+    <header class="h-16 border-b border-[#2d2e31] bg-[#1e1f20] px-4 flex items-center justify-between gap-4 sticky top-0 z-30">
+        <!-- Left: Hamburger (Mobile) + Logo & Brand -->
+        <div class="flex items-center gap-3 shrink-0">
+            <!-- Mobile Menu Toggle Button -->
+            <button onclick="toggleMobileDrawer()" class="md:hidden p-2.5 text-slate-300 hover:bg-[#28292a] rounded-full transition" title="Open Navigation Menu">
+                <i class="fa-solid fa-bars text-lg"></i>
+            </button>
+
+            <!-- Brand Logo -->
+            <a href="#" class="flex items-center gap-2.5 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-emerald-500 to-amber-400 p-0.5 flex items-center justify-center shadow-md">
+                    <div class="w-full h-full bg-[#1e1f20] rounded-[10px] flex items-center justify-center">
+                        <i class="fa-solid fa-hard-drive text-blue-400 text-lg"></i>
+                    </div>
+                </div>
+                <div class="hidden sm:block">
+                    <span class="font-bold text-lg text-white tracking-tight leading-none block">Cloud Drive</span>
+                    <span class="text-[10px] text-blue-400 font-semibold tracking-wider uppercase">Multi-Gmail Storage</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Center: Google Drive Style Search Bar (Desktop) -->
+        <div class="flex-1 max-w-2xl mx-auto hidden sm:block">
+            <div class="relative flex items-center">
+                <button class="absolute left-4 text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                </button>
+                <input type="text" id="searchInput" onkeyup="filterFiles()" placeholder="ស្វែងរកក្នុង Drive (Search in Cloud Drive)..." 
+                    class="w-full pl-11 pr-12 py-2.5 bg-[#28292a] border border-transparent focus:border-blue-500/50 hover:bg-[#323335] text-slate-100 placeholder-slate-400 rounded-full text-sm outline-none transition shadow-inner">
+                <button onclick="showToast('ការចម្រោះ (Filter) ត្រូវបានអនុវត្ត')" class="absolute right-3 p-1.5 text-slate-400 hover:text-white hover:bg-[#38393c] rounded-full transition" title="Filter Search">
+                    <i class="fa-solid fa-sliders text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right: Storage Quick Stats + Theme Toggle + User Avatar -->
+        <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+            <!-- Mobile Search Icon Trigger -->
+            <button onclick="toggleMobileSearch()" class="sm:hidden p-2 text-slate-300 hover:bg-[#28292a] rounded-full transition">
+                <i class="fa-solid fa-magnifying-glass text-base"></i>
+            </button>
+
+            <!-- Quick Storage Stat Badge (Desktop) -->
+            <div class="hidden lg:flex items-center gap-2 bg-[#28292a] px-3 py-1.5 rounded-full border border-[#36373a] text-xs">
+                <i class="fa-solid fa-cloud-arrow-up text-blue-400"></i>
+                <span class="text-slate-300">សរុប: <strong id="headerStorageUsageText" class="text-white">16.3 GB / 45 GB</strong></span>
+            </div>
+
+            <!-- Theme Toggle -->
+            <button onclick="toggleTheme()" class="p-2.5 text-slate-300 hover:text-white hover:bg-[#28292a] rounded-full transition" title="Toggle Theme">
+                <i class="fa-solid fa-sun hidden" id="themeSunIcon"></i>
+                <i class="fa-solid fa-moon" id="themeMoonIcon"></i>
+            </button>
+
+            <!-- Account Add Trigger Button -->
+            <button onclick="openAddAccountModal()" class="hidden sm:flex items-center gap-1.5 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border border-blue-500/30 px-3 py-1.5 rounded-full text-xs font-semibold transition">
+                <i class="fa-solid fa-user-plus text-xs"></i>
+                <span>+ថែម Gmail</span>
+            </button>
+
+            <!-- User Avatar Profile -->
+            <div class="relative group">
+                <button class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 p-0.5 focus:outline-none ring-2 ring-transparent group-hover:ring-blue-500 transition">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-full h-full object-cover rounded-full" onerror="this.src='https://placehold.co/100x100/1a73e8/ffffff?text=User'">
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Expandable Search Bar -->
+    <div id="mobileSearchContainer" class="hidden sm:hidden bg-[#1e1f20] px-4 py-2 border-b border-[#2d2e31]">
+        <div class="relative flex items-center">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-sm"></i>
+            <input type="text" id="mobileSearchInput" onkeyup="filterFilesMobile()" placeholder="ស្វែងរកក្នុង Drive..." class="w-full pl-9 pr-8 py-2 bg-[#28292a] text-slate-100 placeholder-slate-400 rounded-full text-xs outline-none">
+            <button onclick="toggleMobileSearch()" class="absolute right-3 text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN BODY LAYOUT ==================== -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- 1. DESKTOP LEFT SIDEBAR -->
+        <aside class="w-64 border-r border-[#2d2e31] bg-[#1e1f20] hidden md:flex flex-col justify-between p-4 shrink-0 overflow-y-auto">
+            <div class="space-y-6">
+                <!-- Primary Action Button (+ New) -->
+                <div class="relative">
+                    <button onclick="openUploadModal()" class="w-full bg-[#28292a] hover:bg-[#323335] text-slate-100 border border-[#3c3d40] font-semibold py-3.5 px-5 rounded-2xl shadow-lg hover:shadow-xl transition flex items-center gap-3 text-sm group">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-500 via-red-500 to-amber-400 flex items-center justify-center shadow-md">
+                            <i class="fa-solid fa-plus text-white text-base group-hover:rotate-90 transition duration-300"></i>
+                        </div>
+                        <span class="tracking-wide">បញ្ចូលវីដេអូ / ឯកសារ</span>
+                    </button>
+                </div>
+
+                <!-- Navigation Links (Google Drive Navigation) -->
+                <nav class="space-y-1 text-sm font-medium">
+                    <a href="#" onclick="setActiveNav(this)" class="sidebar-link active flex items-center gap-3.5 px-4 py-2.5 rounded-full bg-blue-600/20 text-blue-400 font-semibold">
+                        <i class="fa-solid fa-hard-drive w-5 text-center text-base"></i>
+                        <span>Drive របស់ខ្ញុំ (My Drive)</span>
+                    </a>
+                    <a href="#" onclick="setActiveNav(this); showToast('ឯកសារចែករំលែក (Shared Files)')" class="sidebar-link flex items-center gap-3.5 px-4 py-2.5 rounded-full text-slate-300 hover:bg-[#28292a] hover:text-white transition">
+                        <i class="fa-solid fa-user-group w-5 text-center text-base"></i>
+                        <span>បានចែករំលែក (Shared)</span>
+                    </a>
+                    <a href="#" onclick="setActiveNav(this); showToast('ឯកសារថ្មីៗ (Recent Files)')" class="sidebar-link flex items-center gap-3.5 px-4 py-2.5 rounded-full text-slate-300 hover:bg-[#28292a] hover:text-white transition">
+                        <i class="fa-solid fa-clock w-5 text-center text-base"></i>
+                        <span>ថ្មីៗ (Recent)</span>
+                    </a>
+                    <a href="#" onclick="setActiveNav(this); showToast('ឯកសារផ្កាយ (Starred Files)')" class="sidebar-link flex items-center gap-3.5 px-4 py-2.5 rounded-full text-slate-300 hover:bg-[#28292a] hover:text-white transition">
+                        <i class="fa-solid fa-star w-5 text-center text-base"></i>
+                        <span>ផ្កាយ (Starred)</span>
+                    </a>
+                    <a href="#" onclick="setActiveNav(this); showToast('ធុងសំរាម (Trash)')" class="sidebar-link flex items-center gap-3.5 px-4 py-2.5 rounded-full text-slate-300 hover:bg-[#28292a] hover:text-white transition">
+                        <i class="fa-solid fa-trash-can w-5 text-center text-base"></i>
+                        <span>ធុងសំរាម (Trash)</span>
+                    </a>
+                </nav>
+
+                <hr class="border-[#2d2e31]">
+
+                <!-- CONNECTED GMAIL ACCOUNTS & STORAGE METERS -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between px-1">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">គណនី Gmail ភ្ជាប់ (<span id="accountCountText">3</span>)</span>
+                        <button onclick="openAddAccountModal()" class="text-xs text-blue-400 hover:underline flex items-center gap-1 font-semibold">
+                            <i class="fa-solid fa-plus text-[10px]"></i> ថែម
+                        </button>
+                    </div>
+
+                    <!-- Gmail Accounts Meter List -->
+                    <div id="accountsMeterContainer" class="space-y-2.5 max-h-52 overflow-y-auto pr-1">
+                        <!-- Account items dynamically rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storage Total Meter Widget -->
+            <div class="pt-4 border-t border-[#2d2e31] space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-400"><i class="fa-solid fa-cloud text-blue-400 mr-1.5"></i>ទំហំសរុបប្រើប្រាស់</span>
+                    <span id="sidebarStoragePercent" class="font-mono font-bold text-slate-200">36%</span>
+                </div>
+                <div class="w-full bg-[#131314] h-2 rounded-full overflow-hidden border border-[#2d2e31]">
+                    <div id="sidebarStorageBar" class="bg-gradient-to-r from-blue-500 to-emerald-400 h-full rounded-full transition-all duration-500" style="width: 36%;"></div>
+                </div>
+                <p id="sidebarStorageText" class="text-[11px] text-slate-400 font-mono">16.3 GB នៃ 45.0 GB បានប្រើ</p>
+            </div>
+        </aside>
+
+        <!-- 2. MOBILE DRAWER NAVIGATION (SLIDE OUT MENU) -->
+        <div id="mobileDrawerOverlay" onclick="toggleMobileDrawer()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden transition-opacity"></div>
+        <aside id="mobileDrawer" class="drawer-slide fixed top-0 left-0 bottom-0 w-72 bg-[#1e1f20] border-r border-[#2d2e31] z-50 flex flex-col justify-between p-4 -translate-x-full md:hidden">
+            <div class="space-y-6">
+                <!-- Mobile Drawer Header -->
+                <div class="flex items-center justify-between pb-3 border-b border-[#2d2e31]">
+                    <div class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-hard-drive text-blue-400 text-xl"></i>
+                        <span class="font-bold text-white text-base">Cloud Drive Menu</span>
+                    </div>
+                    <button onclick="toggleMobileDrawer()" class="p-2 text-slate-400 hover:text-white rounded-full">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="space-y-1 text-sm font-medium">
+                    <a href="#" onclick="toggleMobileDrawer()" class="flex items-center gap-3.5 px-4 py-2.5 rounded-full bg-blue-600/20 text-blue-400 font-semibold">
+                        <i class="fa-solid fa-hard-drive w-5 text-center"></i>
+                        <span>Drive របស់ខ្ញុំ (My Drive)</span>
+                    </a>
+                    <a href="#" onclick="toggleMobileDrawer(); showToast('Shared')" class="flex items-center gap-3.5 px-4 py-2.5 rounded-full text-slate-300 hover:bg-[#28292a]">
+                        <i class="fa-solid fa-user-group w-5 text-center"></i>
+                        <span>បានចែករំលែក (Shared)</span>
+                    </a>
+                    <a href="#" onclick="toggleMobileDrawer(); showToast('Recent')" class="flex items-center gap-3.5 px-4 py-2.5 rounded-full text-slate-300 hover:bg-[#28292a]">
+                        <i class="fa-solid fa-clock w-5 text-center"></i>
+                        <span>ថ្មីៗ (Recent)</span>
+                    </a>
+                    <a href="#" onclick="toggleMobileDrawer(); showToast('Starred')" class="flex items-center gap-3.5 px-4 py-2.5 rounded-full text-slate-300 hover:bg-[#28292a]">
+                        <i class="fa-solid fa-star w-5 text-center"></i>
+                        <span>ផ្កាយ (Starred)</span>
+                    </a>
+                </nav>
+
+                <hr class="border-[#2d2e31]">
+
+                <!-- Mobile Gmail Accounts List -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Gmail ភ្ជាប់ទាំងអស់</span>
+                        <button onclick="toggleMobileDrawer(); openAddAccountModal();" class="text-xs text-blue-400 hover:underline">+ ថែម Gmail</button>
+                    </div>
+                    <div id="mobileAccountsMeterContainer" class="space-y-2.5 max-h-48 overflow-y-auto">
+                        <!-- Accounts rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storage Total Summary Mobile -->
+            <div class="pt-4 border-t border-[#2d2e31] space-y-2">
+                <div class="flex justify-between text-xs text-slate-300">
+                    <span>ទំហំសរុប</span>
+                    <span id="mobileSidebarStorageText" class="font-mono">16.3 / 45.0 GB</span>
+                </div>
+                <div class="w-full bg-[#131314] h-2 rounded-full overflow-hidden border border-[#2d2e31]">
+                    <div id="mobileSidebarStorageBar" class="bg-blue-500 h-full rounded-full" style="width: 36%;"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 3. MAIN CONTENT AREA -->
+        <main class="flex-1 bg-[#131314] p-4 sm:p-6 overflow-y-auto space-y-6 pb-24 md:pb-8">
+
+            <!-- Breadcrumb Navigation & View Controls Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#2d2e31] pb-4">
+                <!-- Breadcrumb -->
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="text-slate-400">Cloud Drive</span>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+                    <span class="font-bold text-white flex items-center gap-1.5 bg-[#28292a] px-3 py-1 rounded-full text-xs">
+                        <i class="fa-solid fa-folder-open text-amber-400"></i>
+                        <span>My Multi-Gmail Drive</span>
+                    </span>
+                </div>
+
+                <!-- Action Bar & View Mode Toggle -->
+                <div class="flex items-center justify-between sm:justify-end gap-3">
+                    <!-- Quick Test Upload Shortcut -->
+                    <button onclick="simulateAutoOverflowUpload(2.5)" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium px-3.5 py-1.5 rounded-full text-xs shadow transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>តេស្ត Upload (2.5GB)</span>
+                    </button>
+
+                    <!-- View Toggle (Grid / List) -->
+                    <div class="flex items-center bg-[#28292a] p-1 rounded-full border border-[#36373a]">
+                        <button id="viewGridBtn" onclick="setViewMode('grid')" class="p-1.5 px-3 rounded-full text-xs font-semibold bg-blue-600 text-white shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-grip"></i>
+                            <span class="hidden sm:inline">Grid</span>
+                        </button>
+                        <button id="viewListBtn" onclick="setViewMode('list')" class="p-1.5 px-3 rounded-full text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-list"></i>
+                            <span class="hidden sm:inline">List</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SMART OVERFLOW ALERT / SYSTEM NOTIFICATION BANNER -->
+            <div id="systemNotificationBanner" class="bg-blue-900/20 border border-blue-500/30 rounded-2xl p-4 flex items-start sm:items-center gap-3.5">
+                <div class="p-2.5 bg-blue-500/20 text-blue-400 rounded-xl shrink-0">
+                    <i class="fa-solid fa-network-wired text-lg"></i>
+                </div>
+                <div class="flex-1 text-xs">
+                    <div class="font-bold text-blue-300 text-sm">ប្រព័ន្ធរ៉ោតទិន្នន័យស្វ័យប្រវត្តិ (Smart Auto-Overflow System Active)</div>
+                    <p class="text-slate-300 mt-0.5">
+                        រាល់ការ Upload ឯកសារនឹងត្រូវត្រួតពិនិត្យទំហំក្នុង Gmail នីមួយៗតាមលំដាប់។ បើ Gmail ទី១ ពេញ វាមានសមត្ថភាពរំលងទៅ Gmail ទី២ ដោយស្វ័យប្រវត្តិ។
+                    </p>
+                </div>
+            </div>
+
+            <!-- QUICK ACCESS / RECENT MEDIA CAROUSEL SECTION -->
+            <section class="space-y-3">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-amber-400"></i>
+                    <span>ចូលមើលរហ័ស (Quick Access Media)</span>
+                </h2>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <!-- Quick Card 1 -->
+                    <div onclick="playVideo('Vision Quest Episode 1', 'rothy.storage01@gmail.com', 'https://www.w3schools.com/html/mov_bbb.mp4')" class="bg-[#1e1f20] hover:bg-[#28292a] border border-[#2d2e31] p-3 rounded-2xl cursor-pointer transition group shadow-sm hover:border-blue-500/40">
+                        <div class="h-24 bg-[#131314] rounded-xl overflow-hidden relative mb-2.5 flex items-center justify-center border border-[#2d2e31]">
+                            <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&auto=format&fit=crop&q=80" alt="Thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition duration-300 opacity-80">
+                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/20 transition">
+                                <div class="w-9 h-9 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                                    <i class="fa-solid fa-play text-xs ml-0.5"></i>
+                                </div>
+                            </div>
+                            <span class="absolute bottom-1.5 right-1.5 bg-black/80 text-[10px] font-mono text-white px-1.5 py-0.5 rounded">3.5 GB</span>
+                        </div>
+                        <h3 class="text-xs font-bold text-white truncate">Vision_Quest_Ep1_4K.mp4</h3>
+                        <p class="text-[10px] text-blue-400 mt-1 truncate"><i class="fa-regular fa-envelope mr-1"></i>rothy.storage01@gmail.com</p>
+                    </div>
+
+                    <!-- Quick Card 2 -->
+                    <div onclick="playVideo('Khmer Movie Trailer 2026', 'rothy.backup02@gmail.com', 'https://www.w3schools.com/html/mov_bbb.mp4')" class="bg-[#1e1f20] hover:bg-[#28292a] border border-[#2d2e31] p-3 rounded-2xl cursor-pointer transition group shadow-sm hover:border-blue-500/40">
+                        <div class="h-24 bg-[#131314] rounded-xl overflow-hidden relative mb-2.5 flex items-center justify-center border border-[#2d2e31]">
+                            <img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&auto=format&fit=crop&q=80" alt="Thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition duration-300 opacity-80">
+                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/20 transition">
+                                <div class="w-9 h-9 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                                    <i class="fa-solid fa-play text-xs ml-0.5"></i>
+                                </div>
+                            </div>
+                            <span class="absolute bottom-1.5 right-1.5 bg-black/80 text-[10px] font-mono text-white px-1.5 py-0.5 rounded">2.1 GB</span>
+                        </div>
+                        <h3 class="text-xs font-bold text-white truncate">Khmer_Movie_Trailer_2026.mp4</h3>
+                        <p class="text-[10px] text-blue-400 mt-1 truncate"><i class="fa-regular fa-envelope mr-1"></i>rothy.backup02@gmail.com</p>
+                    </div>
+
+                    <!-- Quick Card 3 -->
+                    <div onclick="showToast('បានបើករូបភាព Movie_Poster.png')" class="bg-[#1e1f20] hover:bg-[#28292a] border border-[#2d2e31] p-3 rounded-2xl cursor-pointer transition group shadow-sm hover:border-blue-500/40">
+                        <div class="h-24 bg-[#131314] rounded-xl overflow-hidden relative mb-2.5 flex items-center justify-center border border-[#2d2e31]">
+                            <img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&auto=format&fit=crop&q=80" alt="Thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition duration-300 opacity-80">
+                            <span class="absolute bottom-1.5 right-1.5 bg-black/80 text-[10px] font-mono text-white px-1.5 py-0.5 rounded">12.4 MB</span>
+                        </div>
+                        <h3 class="text-xs font-bold text-white truncate">Movie_Poster_VisionQuest.png</h3>
+                        <p class="text-[10px] text-blue-400 mt-1 truncate"><i class="fa-regular fa-envelope mr-1"></i>rothy.storage01@gmail.com</p>
+                    </div>
+
+                    <!-- Quick Card 4 -->
+                    <div onclick="showToast('បានបើកឯកសារ Architecture_Doc.pdf')" class="hidden lg:block bg-[#1e1f20] hover:bg-[#28292a] border border-[#2d2e31] p-3 rounded-2xl cursor-pointer transition group shadow-sm hover:border-blue-500/40">
+                        <div class="h-24 bg-[#131314] rounded-xl overflow-hidden relative mb-2.5 flex items-center justify-center border border-[#2d2e31]">
+                            <i class="fa-solid fa-file-pdf text-red-500 text-3xl"></i>
+                            <span class="absolute bottom-1.5 right-1.5 bg-black/80 text-[10px] font-mono text-white px-1.5 py-0.5 rounded">4.2 MB</span>
+                        </div>
+                        <h3 class="text-xs font-bold text-white truncate">Architecture_Doc_v2.pdf</h3>
+                        <p class="text-[10px] text-blue-400 mt-1 truncate"><i class="fa-regular fa-envelope mr-1"></i>rothy.backup02@gmail.com</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- UNIFIED FILE LIST / GRID SECTION -->
+            <section class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                        <i class="fa-solid fa-folder text-blue-400"></i>
+                        <span>ឯកសារទាំងអស់ក្នង Drive (All Files across Gmails)</span>
+                    </h2>
+                    <span id="fileCountBadge" class="text-xs text-slate-400">4 ឯកសារ</span>
+                </div>
+
+                <!-- 1. GRID VIEW CONTAINER -->
+                <div id="fileGridView" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <!-- Files dynamically generated here in Grid Mode -->
+                </div>
+
+                <!-- 2. LIST VIEW CONTAINER (Table) -->
+                <div id="fileListView" class="hidden bg-[#1e1f20] border border-[#2d2e31] rounded-2xl overflow-hidden shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-[#131314] text-slate-400 uppercase tracking-wider text-[10px] border-b border-[#2d2e31]">
+                                <tr>
+                                    <th class="p-3.5">ឈ្មោះឯកសារ (File Name)</th>
+                                    <th class="p-3.5">គណនីរក្សាទុក (Gmail Owner)</th>
+                                    <th class="p-3.5">ទំហំ (Size)</th>
+                                    <th class="p-3.5">កាលបរិច្ឆេទ</th>
+                                    <th class="p-3.5 text-right">សកម្មភាព</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fileListTableBody" class="divide-y divide-[#2d2e31] font-medium">
+                                <!-- Files dynamically generated here in List Mode -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ==================== MOBILE BOTTOM NAVIGATION BAR ==================== -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#1e1f20] border-t border-[#2d2e31] z-30 flex items-center justify-around px-2 shadow-2xl">
+        <a href="#" onclick="setActiveBottomNav(this)" class="flex flex-col items-center gap-1 text-blue-400 font-bold">
+            <i class="fa-solid fa-hard-drive text-lg"></i>
+            <span class="text-[10px]">Drive</span>
+        </a>
+        <a href="#" onclick="setActiveBottomNav(this); showToast(' Shared Files')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-white">
+            <i class="fa-solid fa-user-group text-lg"></i>
+            <span class="text-[10px]">Shared</span>
+        </a>
+        <a href="#" onclick="setActiveBottomNav(this); showToast('Starred Files')" class="flex flex-col items-center gap-1 text-slate-400 hover:text-white">
+            <i class="fa-solid fa-star text-lg"></i>
+            <span class="text-[10px]">Starred</span>
+        </a>
+        <a href="#" onclick="openAddAccountModal()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-white">
+            <i class="fa-solid fa-users-gear text-lg"></i>
+            <span class="text-[10px]">Accounts</span>
+        </a>
+    </div>
+
+    <!-- MOBILE FLOATING ACTION BUTTON (+ NEW) -->
+    <button onclick="openUploadModal()" class="md:hidden fixed bottom-20 right-5 w-14 h-14 bg-gradient-to-tr from-blue-600 via-emerald-500 to-amber-400 rounded-full text-white shadow-2xl flex items-center justify-center z-30 hover:scale-105 active:scale-95 transition">
+        <i class="fa-solid fa-plus text-2xl"></i>
+    </button>
+
+    <!-- ==================== MODALS & OVERLAYS ==================== -->
+
+    <!-- 1. VIDEO PREVIEW PLAYER MODAL -->
+    <div id="videoModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#1e1f20] border border-[#2d2e31] w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-[#2d2e31] flex items-center justify-between">
+                <div>
+                    <h3 id="videoModalTitle" class="text-sm font-bold text-white">Video Title.mp4</h3>
+                    <p id="videoModalGmail" class="text-xs text-blue-400 mt-0.5">Stored in: account@gmail.com</p>
+                </div>
+                <button onclick="closeVideoModal()" class="p-2 text-slate-400 hover:text-white rounded-full bg-[#28292a]">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+            <!-- Video Container -->
+            <div class="bg-black aspect-video w-full flex items-center justify-center">
+                <video id="videoModalPlayer" controls class="w-full h-full">
+                    <source id="videoModalSource" src="" type="video/mp4">
+                    Your browser does not support playing HTML video.
+                </video>
+            </div>
+            <!-- Modal Footer -->
+            <div class="p-3 bg-[#131314] flex justify-end">
+                <button onclick="closeVideoModal()" class="bg-[#28292a] hover:bg-[#323335] text-slate-200 text-xs px-4 py-2 rounded-xl font-medium">
+                    បិទ (Close)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. UPLOAD MODAL SIMULATOR -->
+    <div id="uploadModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#1e1f20] border border-[#2d2e31] w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between border-b border-[#2d2e31] pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-blue-400"></i>
+                    <span>បញ្ចូលវីដេអូ / ឯកសារ (Upload File)</span>
+                </h3>
+                <button onclick="closeUploadModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">ឈ្មោះឯកសារ</label>
+                    <input type="text" id="uploadFileNameInput" value="Khmer_Movie_HD_2026.mp4" class="w-full bg-[#28292a] border border-[#36373a] rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">ទំហំឯកសារ (GB)</label>
+                    <select id="uploadFileSizeSelect" class="w-full bg-[#28292a] border border-[#36373a] rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-blue-500">
+                        <option value="1.5">1.5 GB</option>
+                        <option value="2.5" selected>2.5 GB</option>
+                        <option value="5.0">5.0 GB (នឹងតម្រូវឱ្យរំលង Gmail បើជិតពេញ)</option>
+                        <option value="8.0">8.0 GB</option>
+                    </select>
+                </div>
+
+                <div class="p-3 bg-blue-900/20 border border-blue-500/20 rounded-xl text-[11px] text-slate-300">
+                    <i class="fa-solid fa-circle-info text-blue-400 mr-1"></i>
+                    ប្រព័ន្ធនឹងស្កែនរក Gmail ណាដែលមានទំហំទំនេរគ្រប់គ្រាន់ដោយស្វ័យប្រវត្តិ។
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeUploadModal()" class="px-4 py-2 bg-[#28292a] text-slate-300 hover:bg-[#323335] text-xs font-medium rounded-xl">បោះបង់</button>
+                <button onclick="submitUploadModal()" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow">បញ្ចូលឯកសារ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. ADD GMAIL ACCOUNT MODAL -->
+    <div id="addAccountModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[#1e1f20] border border-[#2d2e31] w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between border-b border-[#2d2e31] pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-brands fa-google text-red-400"></i>
+                    <span>ភ្ជាប់ Gmail ថ្មី (+15GB Free)</span>
+                </h3>
+                <button onclick="closeAddAccountModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">អាសយដ្ឋាន Gmail</label>
+                    <input type="email" id="newGmailAddressInput" placeholder="example.storage@gmail.com" class="w-full bg-[#28292a] border border-[#36373a] rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-blue-500">
+                </div>
+
+                <div class="p-3 bg-emerald-900/20 border border-emerald-500/20 rounded-xl text-[11px] text-slate-300">
+                    <i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i>
+                    ការភ្ជាប់ Gmail ថ្មីមួយ នឹងបន្ថែមទំហំផ្ទុក +15GB ដោយស្វ័យប្រវត្តិ។
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeAddAccountModal()" class="px-4 py-2 bg-[#28292a] text-slate-300 hover:bg-[#323335] text-xs font-medium rounded-xl">បោះបង់</button>
+                <button onclick="submitAddAccountModal()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow">ភ្ជាប់ Google OAuth</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST ALERT NOTIFICATION -->
+    <div id="toastAlert" class="fixed bottom-20 md:bottom-6 right-6 bg-[#1e1f20] border border-blue-500/40 text-white text-xs px-4 py-3 rounded-2xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none flex items-center gap-3 z-50 max-w-sm">
+        <div id="toastIcon" class="p-2 bg-blue-500/20 text-blue-400 rounded-xl">
+            <i class="fa-solid fa-circle-info text-base"></i>
+        </div>
+        <div id="toastMessage" class="flex-1">សារដំណឹងប្រព័ន្ធ</div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT APP LOGIC ==================== -->
+    <script>
+        // -------------------------------------------------------------
+        // APPLICATION STATE DATA (MULTI-GMAIL + FILES)
+        // -------------------------------------------------------------
+        let viewMode = 'grid'; // 'grid' or 'list'
+
+        let accounts = [
+            { id: 1, email: 'rothy.storage01@gmail.com', used: 14.2, capacity: 15.0 },
+            { id: 2, email: 'rothy.backup02@gmail.com', used: 2.1, capacity: 15.0 },
+            { id: 3, email: 'rothy.media03@gmail.com', used: 0.0, capacity: 15.0 }
+        ];
+
+        let files = [
+            {
+                id: 101,
+                name: 'Vision_Quest_Ep1_4K.mp4',
+                type: 'video',
+                size: 3.5, // GB
+                gmailOwner: 'rothy.storage01@gmail.com',
+                date: '16 តុលា 2026',
+                thumbnail: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&auto=format&fit=crop&q=80',
+                videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4'
+            },
+            {
+                id: 102,
+                name: 'Movie_Poster_VisionQuest.png',
+                type: 'image',
+                size: 0.012, // ~12.4 MB
+                gmailOwner: 'rothy.storage01@gmail.com',
+                date: '16 តុលា 2026',
+                thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&auto=format&fit=crop&q=80',
+                videoUrl: ''
+            },
+            {
+                id: 103,
+                name: 'Architecture_Doc_v2.pdf',
+                type: 'doc',
+                size: 0.004, // ~4.2 MB
+                gmailOwner: 'rothy.backup02@gmail.com',
+                date: '15 តុលា 2026',
+                thumbnail: '',
+                videoUrl: ''
+            },
+            {
+                id: 104,
+                name: 'Khmer_Movie_Trailer_2026.mp4',
+                type: 'video',
+                size: 2.1, // GB
+                gmailOwner: 'rothy.backup02@gmail.com',
+                date: '14 តុលា 2026',
+                thumbnail: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&auto=format&fit=crop&q=80',
+                videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4'
+            }
+        ];
+
+        // -------------------------------------------------------------
+        // INITIALIZATION
+        // -------------------------------------------------------------
+        window.addEventListener('DOMContentLoaded', () => {
+            renderAccountsMeters();
+            renderFiles();
+            updateTotalStorageMetrics();
+        });
+
+        // -------------------------------------------------------------
+        // ACCOUNTS METERS & CALCULATIONS
+        // -------------------------------------------------------------
+        function renderAccountsMeters() {
+            const container = document.getElementById('accountsMeterContainer');
+            const mobileContainer = document.getElementById('mobileAccountsMeterContainer');
+            
+            let html = '';
+            accounts.forEach(acc => {
+                const percent = Math.min(100, Math.round((acc.used / acc.capacity) * 100));
+                let statusBadge = '';
+                let barColor = 'bg-blue-500';
+
+                if (percent >= 90) {
+                    statusBadge = '<span class="text-[9px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded border border-red-500/20 font-bold">ជិតពេញ</span>';
+                    barColor = 'bg-red-500';
+                } else if (percent > 0) {
+                    statusBadge = '<span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold">សកម្ម</span>';
+                    barColor = 'bg-emerald-500';
+                } else {
+                    statusBadge = '<span class="text-[9px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded font-bold">ទំនេរ</span>';
+                    barColor = 'bg-slate-600';
+                }
+
+                html += `
+                    <div class="bg-[#28292a] p-2.5 rounded-xl border border-[#36373a] space-y-1.5">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-mono text-slate-200 text-[11px] truncate max-w-[130px]" title="${acc.email}">${acc.email}</span>
+                            ${statusBadge}
+                        </div>
+                        <div class="w-full bg-[#131314] h-1.5 rounded-full overflow-hidden">
+                            <div class="${barColor} h-full rounded-full transition-all duration-300" style="width: ${percent}%;"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                            <span>${acc.used.toFixed(1)} / ${acc.capacity.toFixed(0)} GB</span>
+                            <span>${percent}%</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            mobileContainer.innerHTML = html;
+            document.getElementById('accountCountText').innerText = accounts.length;
+        }
+
+        function updateTotalStorageMetrics() {
+            const totalCapacity = accounts.reduce((sum, acc) => sum + acc.capacity, 0);
+            const totalUsed = accounts.reduce((sum, acc) => sum + acc.used, 0);
+            const percent = Math.round((totalUsed / totalCapacity) * 100);
+
+            // Update Header & Sidebars
+            document.getElementById('headerStorageUsageText').innerText = `${totalUsed.toFixed(1)} GB / ${totalCapacity.toFixed(0)} GB`;
+            
+            document.getElementById('sidebarStoragePercent').innerText = `${percent}%`;
+            document.getElementById('sidebarStorageBar').style.width = `${percent}%`;
+            document.getElementById('sidebarStorageText').innerText = `${totalUsed.toFixed(1)} GB នៃ ${totalCapacity.toFixed(0)} GB បានប្រើ`;
+
+            document.getElementById('mobileSidebarStorageText').innerText = `${totalUsed.toFixed(1)} / ${totalCapacity.toFixed(0)} GB`;
+            document.getElementById('mobileSidebarStorageBar').style.width = `${percent}%`;
+        }
+
+        // -------------------------------------------------------------
+        // SMART AUTO-OVERFLOW FILE ROUTING LOGIC
+        // -------------------------------------------------------------
+        function simulateAutoOverflowUpload(fileSizeGB, fileName = '') {
+            const size = parseFloat(fileSizeGB);
+            const fname = fileName || `Video_Clip_${Math.floor(Math.random() * 900) + 100}_HD.mp4`;
+
+            // Sequential search for Gmail with enough remaining space
+            let targetAccount = null;
+            for (let acc of accounts) {
+                const remaining = acc.capacity - acc.used;
+                if (remaining >= size) {
+                    targetAccount = acc;
+                    break;
+                }
+            }
+
+            if (!targetAccount) {
+                showToast(`គ្មាន Gmail ណាមានទំហំទំនេរគ្រប់គ្រាន់ (${size}GB) ទេ។ សូមថែម Gmail ថ្មី!`, 'error');
+                return;
+            }
+
+            // Update Account Usage
+            targetAccount.used += size;
+
+            // Add File to Unified List
+            const newFile = {
+                id: Date.now(),
+                name: fname,
+                type: fname.endsWith('.mp4') ? 'video' : 'file',
+                size: size,
+                gmailOwner: targetAccount.email,
+                date: '17 តុលា 2026',
+                thumbnail: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&auto=format&fit=crop&q=80',
+                videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4'
+            };
+
+            files.unshift(newFile);
+
+            // Re-render
+            renderAccountsMeters();
+            updateTotalStorageMetrics();
+            renderFiles();
+
+            showToast(`អាប់ឡូតជោគជ័យ! បញ្ចូលទៅក្នុង <strong>${targetAccount.email}</strong>`, 'success');
+        }
+
+        // -------------------------------------------------------------
+        // FILE RENDERER (GRID & LIST VIEWS)
+        // -------------------------------------------------------------
+        function renderFiles() {
+            const gridView = document.getElementById('fileGridView');
+            const listTableBody = document.getElementById('fileListTableBody');
+            document.getElementById('fileCountBadge').innerText = `${files.length} ឯកសារ`;
+
+            // 1. Grid Mode HTML
+            let gridHtml = '';
+            files.forEach(file => {
+                let icon = '<i class="fa-solid fa-file-video text-blue-400 text-xl"></i>';
+                let actionBtn = `<button onclick="playVideo('${file.name}', '${file.gmailOwner}', '${file.videoUrl}')" class="p-2 bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl transition" title="Play Video"><i class="fa-solid fa-play text-xs"></i></button>`;
+
+                if (file.type === 'image') {
+                    icon = '<i class="fa-solid fa-image text-emerald-400 text-xl"></i>';
+                    actionBtn = `<button onclick="showToast('មើលរូបភាព: ${file.name}')" class="p-2 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-xl transition"><i class="fa-solid fa-eye text-xs"></i></button>`;
+                } else if (file.type === 'doc') {
+                    icon = '<i class="fa-solid fa-file-pdf text-red-400 text-xl"></i>';
+                    actionBtn = `<button onclick="showToast('បើកឯកសារ PDF')" class="p-2 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white rounded-xl transition"><i class="fa-solid fa-file-lines text-xs"></i></button>`;
+                }
+
+                const sizeDisplay = file.size < 1 ? `${(file.size * 1024).toFixed(1)} MB` : `${file.size.toFixed(1)} GB`;
+
+                gridHtml += `
+                    <div class="bg-[#1e1f20] hover:bg-[#28292a] border border-[#2d2e31] p-3.5 rounded-2xl transition group hover:border-blue-500/50 flex flex-col justify-between space-y-3">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="p-2 bg-[#131314] rounded-xl border border-[#2d2e31]">
+                                    ${icon}
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 class="text-xs font-bold text-white truncate" title="${file.name}">${file.name}</h3>
+                                    <p class="text-[10px] text-slate-400 mt-0.5 font-mono">${sizeDisplay} • ${file.date}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gmail Owner Badge -->
+                        <div class="bg-[#131314] p-2 rounded-xl border border-[#2d2e31] flex items-center justify-between text-[10px]">
+                            <span class="text-slate-400 flex items-center gap-1 truncate">
+                                <i class="fa-regular fa-envelope text-blue-400"></i>
+                                <span class="font-mono text-slate-300 truncate">${file.gmailOwner}</span>
+                            </span>
+                        </div>
+
+                        <!-- Card Action Buttons -->
+                        <div class="flex items-center justify-between pt-1">
+                            ${actionBtn}
+                            <button onclick="deleteFile(${file.id})" class="p-2 text-slate-500 hover:text-red-400 rounded-xl hover:bg-red-500/10 transition" title="Delete">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            gridView.innerHTML = gridHtml;
+
+            // 2. List Mode HTML
+            let listHtml = '';
+            files.forEach(file => {
+                const sizeDisplay = file.size < 1 ? `${(file.size * 1024).toFixed(1)} MB` : `${file.size.toFixed(1)} GB`;
+                
+                listHtml += `
+                    <tr class="hover:bg-[#28292a] transition">
+                        <td class="p-3.5 flex items-center gap-3">
+                            <i class="fa-solid ${file.type==='video'?'fa-file-video text-blue-400':file.type==='image'?'fa-image text-emerald-400':'fa-file-pdf text-red-400'} text-base"></i>
+                            <span class="font-bold text-white truncate max-w-[180px] sm:max-w-xs">${file.name}</span>
+                        </td>
+                        <td class="p-3.5">
+                            <span class="font-mono text-[11px] bg-[#131314] px-2.5 py-1 rounded-md text-slate-300 border border-[#2d2e31]">${file.gmailOwner}</span>
+                        </td>
+                        <td class="p-3.5 font-mono font-bold text-slate-200">${sizeDisplay}</td>
+                        <td class="p-3.5 text-slate-400">${file.date}</td>
+                        <td class="p-3.5 text-right space-x-1">
+                            ${file.type === 'video' ? `<button onclick="playVideo('${file.name}', '${file.gmailOwner}', '${file.videoUrl}')" class="p-1.5 text-blue-400 hover:bg-blue-600/20 rounded-lg"><i class="fa-solid fa-play"></i></button>` : ''}
+                            <button onclick="deleteFile(${file.id})" class="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            listTableBody.innerHTML = listHtml;
+        }
+
+        function deleteFile(fileId) {
+            const index = files.findIndex(f => f.id === fileId);
+            if (index !== -1) {
+                const deletedFile = files[index];
+                // Deduct usage from corresponding account
+                const acc = accounts.find(a => a.email === deletedFile.gmailOwner);
+                if (acc) {
+                    acc.used = Math.max(0, acc.used - deletedFile.size);
+                }
+
+                files.splice(index, 1);
+                renderAccountsMeters();
+                updateTotalStorageMetrics();
+                renderFiles();
+                showToast(`បានលុបឯកសារ '${deletedFile.name}' រួចរាល់`, 'info');
+            }
+        }
+
+        // -------------------------------------------------------------
+        // VIEW TOGGLE & SEARCH FILTERS
+        // -------------------------------------------------------------
+        function setViewMode(mode) {
+            viewMode = mode;
+            const gridView = document.getElementById('fileGridView');
+            const listView = document.getElementById('fileListView');
+            const gridBtn = document.getElementById('viewGridBtn');
+            const listBtn = document.getElementById('viewListBtn');
+
+            if (mode === 'grid') {
+                gridView.classList.remove('hidden');
+                listView.classList.add('hidden');
+                gridBtn.className = "p-1.5 px-3 rounded-full text-xs font-semibold bg-blue-600 text-white shadow transition flex items-center gap-1.5";
+                listBtn.className = "p-1.5 px-3 rounded-full text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-1.5";
+            } else {
+                gridView.classList.add('hidden');
+                listView.classList.remove('hidden');
+                listBtn.className = "p-1.5 px-3 rounded-full text-xs font-semibold bg-blue-600 text-white shadow transition flex items-center gap-1.5";
+                gridBtn.className = "p-1.5 px-3 rounded-full text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-1.5";
+            }
+        }
+
+        function filterFiles() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = files.filter(f => f.name.toLowerCase().includes(query) || f.gmailOwner.toLowerCase().includes(query));
+            // Temporarily update UI
+            // Simple render simulation
+        }
+
+        function filterFilesMobile() {
+            const query = document.getElementById('mobileSearchInput').value.toLowerCase();
+            // Filter mobile
+        }
+
+        // -------------------------------------------------------------
+        // DRAWER, MODALS & TOAST UI CONTROLS
+        // -------------------------------------------------------------
+        function toggleMobileDrawer() {
+            const drawer = document.getElementById('mobileDrawer');
+            const overlay = document.getElementById('mobileDrawerOverlay');
+            if (drawer.classList.contains('-translate-x-full')) {
+                drawer.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                drawer.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        function toggleMobileSearch() {
+            const container = document.getElementById('mobileSearchContainer');
+            container.classList.toggle('hidden');
+        }
+
+        function playVideo(title, gmail, videoUrl) {
+            document.getElementById('videoModalTitle').innerText = title;
+            document.getElementById('videoModalGmail').innerText = `រក្សាទុកក្នុង: ${gmail}`;
+            document.getElementById('videoModalSource').src = videoUrl || 'https://www.w3schools.com/html/mov_bbb.mp4';
+            const player = document.getElementById('videoModalPlayer');
+            player.load();
+            document.getElementById('videoModal').classList.remove('hidden');
+        }
+
+        function closeVideoModal() {
+            const player = document.getElementById('videoModalPlayer');
+            player.pause();
+            document.getElementById('videoModal').classList.add('hidden');
+        }
+
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.remove('hidden');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.add('hidden');
+        }
+
+        function submitUploadModal() {
+            const name = document.getElementById('uploadFileNameInput').value;
+            const size = document.getElementById('uploadFileSizeSelect').value;
+            closeUploadModal();
+            simulateAutoOverflowUpload(size, name);
+        }
+
+        function openAddAccountModal() {
+            document.getElementById('addAccountModal').classList.remove('hidden');
+        }
+
+        function closeAddAccountModal() {
+            document.getElementById('addAccountModal').classList.add('hidden');
+        }
+
+        function submitAddAccountModal() {
+            const email = document.getElementById('newGmailAddressInput').value || `storage0${accounts.length+1}@gmail.com`;
+            accounts.push({ id: Date.now(), email: email, used: 0.0, capacity: 15.0 });
+            closeAddAccountModal();
+            renderAccountsMeters();
+            updateTotalStorageMetrics();
+            showToast(`ភ្ជាប់ <strong>${email}</strong> ជោគជ័យ! (+15GB Added)`, 'success');
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const sun = document.getElementById('themeSunIcon');
+            const moon = document.getElementById('themeMoonIcon');
+
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                sun.classList.remove('hidden');
+                moon.classList.add('hidden');
+                showToast('ប្តូរទៅកាន់ Light Mode');
+            } else {
+                html.classList.add('dark');
+                sun.classList.add('hidden');
+                moon.classList.remove('hidden');
+                showToast('ប្តូរទៅកាន់ Dark Mode');
+            }
+        }
+
+        function setActiveNav(el) {
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.className = "sidebar-link flex items-center gap-3.5 px-4 py-2.5 rounded-full text-slate-300 hover:bg-[#28292a] hover:text-white transition";
+            });
+            el.className = "sidebar-link active flex items-center gap-3.5 px-4 py-2.5 rounded-full bg-blue-600/20 text-blue-400 font-semibold";
+        }
+
+        function setActiveBottomNav(el) {
+            // Mobile bottom nav styling
+        }
+
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toastAlert');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMessage.innerHTML = msg;
+            
+            if (type === 'success') {
+                toastIcon.className = "p-2 bg-emerald-500/20 text-emerald-400 rounded-xl";
+                toastIcon.innerHTML = '<i class="fa-solid fa-circle-check text-base"></i>';
+            } else if (type === 'error') {
+                toastIcon.className = "p-2 bg-red-500/20 text-red-400 rounded-xl";
+                toastIcon.innerHTML = '<i class="fa-solid fa-circle-exclamation text-base"></i>';
+            } else {
+                toastIcon.className = "p-2 bg-blue-500/20 text-blue-400 rounded-xl";
+                toastIcon.innerHTML = '<i class="fa-solid fa-circle-info text-base"></i>';
+            }
+
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
